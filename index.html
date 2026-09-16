@@ -1,185 +1,19 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>투자 IF 시작아이디어</title>
-  <link rel="stylesheet" href="시작아이디어.css">
+  <title>투자 IF — 화면 시안</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./js/components.js" defer></script>
+  <script src="./app.js" defer></script>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="주요 메뉴">
-      <div class="brand">
-        <div class="brand-mark">IF</div>
-        <div>
-          <strong>투자 IF</strong>
-          <span>한국 투자자용 시뮬레이션</span>
-        </div>
-      </div>
+<div id="if-layout" aria-label="투자 IF 모바일 화면 구성 시안">
 
-      <nav class="nav-list">
-        <button class="nav-item active" type="button">시뮬레이션</button>
-        <button class="nav-item" type="button">Actual 자산</button>
-        <button class="nav-item" type="button">IF 타임라인</button>
-        <button class="nav-item" type="button">세금 리포트</button>
-        <button class="nav-item" type="button">거래 원장</button>
-      </nav>
+<div class="if-picker"><label for="if-screen">화면 구성 <span class="if-small">· MVP 6개 페이지</span></label><select id="if-screen"><option value="home">01 둘러보기</option><option value="search">02 종목 검색</option><option value="stock">03 종목 상세</option><option value="input">04 가상 매수 입력</option><option value="result">05 결과 · 기록 상세</option><option value="history">06 내 기록</option></select></div>
+<div class="if-status">화면 배치 시안 · 왼쪽 가장자리에서 오른쪽으로 밀어 이전 화면으로</div><div class="if-phone" id="if-stage"></div>
 
-      <section class="side-summary" aria-label="월별 자산 체크포인트">
-        <p>월별 자산 체크포인트</p>
-        <strong id="sideCheckpoint">₩28,500,000</strong>
-        <span id="sideCheckpointDate">2025년 4월 기준</span>
-      </section>
-    </aside>
-
-    <main class="main">
-      <header class="header">
-        <div>
-          <p class="eyebrow">Actual vs IF</p>
-          <h1>이날 샀다면, 지금 내 손에 얼마가 남을까?</h1>
-        </div>
-        <div class="account-pill">해외주식 · 일반계좌 · KRW</div>
-      </header>
-
-      <section class="summary-grid" aria-label="핵심 비교 숫자">
-        <article class="summary-card">
-          <span>Actual 현재 자산</span>
-          <strong id="actualAsset">₩36,400,000</strong>
-        </article>
-        <article class="summary-card primary">
-          <span>IF 세후 예상 자산</span>
-          <strong id="afterTaxAsset">₩0</strong>
-        </article>
-        <article class="summary-card">
-          <span>IF와의 차이</span>
-          <strong id="assetGap">₩0</strong>
-        </article>
-      </section>
-
-      <section class="workspace">
-        <section class="panel chart-panel" aria-label="가격 차트와 날짜 선택">
-          <div class="panel-head">
-            <div>
-              <p class="panel-kicker">NASDAQ · NVIDIA Corp.</p>
-              <h2>NVDA</h2>
-            </div>
-            <div class="price-box">
-              <span>현재가</span>
-              <strong>$184.42</strong>
-            </div>
-          </div>
-
-          <div class="chart-wrap">
-            <svg id="priceChart" viewBox="0 0 760 340" role="img" aria-label="NVDA 가격 차트"></svg>
-            <div class="chart-callout" id="chartCallout">
-              <span id="selectedDateLabel">2025.04.07</span>
-              <strong>이날 샀다면?</strong>
-              <button id="useSelectedDate" type="button">이 날짜로 계산</button>
-            </div>
-          </div>
-
-          <div class="date-buttons" id="dateButtons" aria-label="기준일 빠른 선택"></div>
-        </section>
-
-        <aside class="panel control-panel" aria-label="시뮬레이션 설정">
-          <div class="panel-head compact">
-            <div>
-              <p class="panel-kicker">IF 주문 설정</p>
-              <h2>투자 조건</h2>
-            </div>
-            <span class="status-dot">실시간 계산</span>
-          </div>
-
-          <div class="field-group">
-            <label>투자 비중</label>
-            <div class="segmented" id="allocationButtons">
-              <button class="selected" type="button" data-percent="100">전액</button>
-              <button type="button" data-percent="50">50%</button>
-              <button type="button" data-percent="30">30%</button>
-              <button type="button" data-percent="custom">직접</button>
-            </div>
-            <div class="custom-row" id="customRow">
-              <input id="customPercent" type="range" min="1" max="100" value="70">
-              <output id="customPercentValue">70%</output>
-            </div>
-          </div>
-
-          <div class="field-group">
-            <label>가상 거래 흐름</label>
-            <div class="scenario-list" id="scenarioList">
-              <button class="selected" type="button" data-scenario="hold">NVDA 현재까지 보유</button>
-              <button type="button" data-scenario="sell">5월에 매도 후 현금 보유</button>
-              <button type="button" data-scenario="rebalance">TSLA 60% · QQQ 40% 재배분</button>
-            </div>
-          </div>
-
-          <div class="field-group">
-            <label for="otherGain">올해 다른 실현손익</label>
-            <div class="input-with-unit">
-              <input id="otherGain" type="number" value="0" step="100000" inputmode="numeric">
-              <span>원</span>
-            </div>
-          </div>
-        </aside>
-      </section>
-
-      <section class="detail-grid">
-        <section class="panel result-panel" aria-label="계산 결과">
-          <div class="panel-head compact">
-            <div>
-              <p class="panel-kicker">세후 결과</p>
-              <h2>지금 전량 매도한다면</h2>
-            </div>
-          </div>
-
-          <dl class="result-list">
-            <div>
-              <dt>투자원금</dt>
-              <dd id="principal">₩0</dd>
-            </div>
-            <div>
-              <dt>세전 평가액</dt>
-              <dd id="grossValue">₩0</dd>
-            </div>
-            <div>
-              <dt>평가이익</dt>
-              <dd id="grossGain">₩0</dd>
-            </div>
-            <div>
-              <dt>기본공제 반영 후 과세대상</dt>
-              <dd id="taxableGain">₩0</dd>
-            </div>
-            <div>
-              <dt>예상 세금·수수료</dt>
-              <dd id="taxAndFee">₩0</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section class="panel timeline-panel" aria-label="투자 타임라인">
-          <div class="panel-head compact">
-            <div>
-              <p class="panel-kicker">IF Timeline</p>
-              <h2>가상 거래 원장</h2>
-            </div>
-          </div>
-          <ol class="timeline" id="timeline"></ol>
-        </section>
-
-        <section class="panel tax-panel" aria-label="양도세 추이">
-          <div class="panel-head compact">
-            <div>
-              <p class="panel-kicker">Tax timing</p>
-              <h2>양도세 추이</h2>
-            </div>
-          </div>
-          <div class="tax-bars" id="taxBars"></div>
-          <p class="tax-note">예시 계산입니다. 실제 신고 금액은 환율, 수수료, 배당, 전체 거래내역에 따라 달라질 수 있습니다.</p>
-        </section>
-      </section>
-    </main>
-  </div>
-
-  <script src="시작아이디어.js"></script>
+</div>
 </body>
 </html>
