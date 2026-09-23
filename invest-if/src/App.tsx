@@ -29,9 +29,20 @@ const stocks: Stock[] = [
 ]
 
 const RECENT_SEARCHES_KEY = 'invest-if.recent-searches.v1'
+const RESULT_MEMO_KEY = 'invest-if.result-memo.v1'
+
+const formatUsd = (value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const formatSignedUsd = (value: number) => `${value >= 0 ? '+' : '-'}${formatUsd(Math.abs(value))}`
+const readResultMemo = () => {
+  try {
+    return localStorage.getItem(RESULT_MEMO_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
 
 function App() {
-  const [screen, setScreen] = useState<'explore' | 'search' | 'detail' | 'simulate'>('explore')
+  const [screen, setScreen] = useState<'explore' | 'search' | 'detail' | 'simulate' | 'result'>('explore')
   const [selectedStock, setSelectedStock] = useState<Stock>(stocks[0])
   const [detailTab, setDetailTab] = useState<DetailTab>('chart')
   const [chartRange, setChartRange] = useState<ChartRange>('6개월')
@@ -44,6 +55,9 @@ function App() {
   const [customBudget, setCustomBudget] = useState('')
   const [saveFunds, setSaveFunds] = useState(false)
   const [simulateError, setSimulateError] = useState('')
+  const [showMemoEditor, setShowMemoEditor] = useState(false)
+  const [memoDraft, setMemoDraft] = useState(readResultMemo)
+  const [savedMemo, setSavedMemo] = useState(readResultMemo)
   const [metric, setMetric] = useState<RankingMetric>('volume')
   const [showAll, setShowAll] = useState(false)
   const [notice, setNotice] = useState('')
@@ -86,6 +100,12 @@ function App() {
         const stock = stocks.find((item) => item.ticker === event.state.ticker)
         if (stock) setSelectedStock(stock)
         setScreen('simulate')
+        return
+      }
+      if (event.state?.screen === 'result') {
+        const stock = stocks.find((item) => item.ticker === event.state.ticker)
+        if (stock) setSelectedStock(stock)
+        setScreen('result')
         return
       }
       setScreen(event.state?.screen === 'search' ? 'search' : 'explore')
@@ -175,6 +195,17 @@ function App() {
   const budget = budgetChoice === 'custom' ? Number(customBudget) || 0 : availableFunds * Number(budgetChoice) / 100
   const expectedShares = stockPrice > 0 ? Math.floor(budget / stockPrice) : 0
   const remainingCash = Math.max(0, availableFunds - expectedShares * stockPrice)
+  const actualPurchase = expectedShares * stockPrice
+  const currentTargetPrice = stockPrice * 1.2
+  const remainingHolding = fundingSource === 'cash' ? 0 : Math.max(0, holdingValue - sellValue)
+  const existingHoldingNow = remainingHolding * 120
+  const newHoldingNow = expectedShares * currentTargetPrice
+  const startingAssets = (fundingSource === 'stock' ? 0 : cashValue) + (fundingSource === 'cash' ? 0 : holdingValue * 100)
+  const expectedBalance = remainingCash + existingHoldingNow + newHoldingNow
+  const holdBalance = (fundingSource === 'stock' ? 0 : cashValue) + (fundingSource === 'cash' ? 0 : holdingValue * 120)
+  const startDifference = expectedBalance - startingAssets
+  const startReturn = startingAssets > 0 ? startDifference / startingAssets * 100 : 0
+  const choiceDifference = expectedBalance - holdBalance
 
   const calculateSimulation = () => {
     if (!selectedDate) {
@@ -198,7 +229,70 @@ function App() {
       return
     }
     setSimulateError('')
-    setNotice('입력값을 확인했어요. 계산 결과 화면은 다음 단계에서 연결할게요.')
+    setNotice('')
+    setScreen('result')
+    window.history.pushState({ screen: 'result', ticker: selectedStock.ticker }, '')
+  }
+
+  const saveMemo = () => {
+    const nextMemo = memoDraft.trim()
+    setSavedMemo(nextMemo)
+    setShowMemoEditor(false)
+    try {
+      localStorage.setItem(RESULT_MEMO_KEY, nextMemo)
+    } catch {
+      setNotice('메모를 이 기기에 저장하지 못했어요. 내용을 복사한 뒤 다시 시도해 주세요.')
+      return
+    }
+    setNotice(nextMemo ? '복기 메모를 이 기기에 저장했어요.' : '저장된 복기 메모를 비웠어요.')
+  }
+
+  if (screen === 'result') {
+    return (
+      <main className="result-screen canvas" style={{ '--safe-area-bottom': `${safeAreaBottom}px` } as React.CSSProperties}>
+        <section className="result-content" aria-labelledby="result-title">
+          <header className="result-heading">
+            <p className="eyebrow">계산 결과 · 예시 데이터</p>
+            <h1 id="result-title">{selectedStock.name}을 샀다면</h1>
+            <p>{selectedDate} 가상 매수 → 2026-09-21 평가</p>
+            <span className="save-status">예시 결과 · 서버에 저장되지 않음</span>
+          </header>
+
+          <section className="balance-hero" aria-label="현재 예상 잔고">
+            <span>현재 예상 잔고</span>
+            <strong>{formatUsd(expectedBalance)}</strong>
+            <p>시작 자산보다 {formatSignedUsd(startDifference)} ({startReturn >= 0 ? '+' : ''}{startReturn.toFixed(1)}%)</p>
+            <small>입력한 자산 범위의 평가액이에요. 출금 가능한 현금과는 달라요.</small>
+          </section>
+
+          <section className="comparison-section">
+            <div className="section-heading"><h2>두 선택을 비교했어요</h2><p>같은 자산에서 시작한 예시 계산이에요.</p></div>
+            <div className="comparison-grid"><article><span>그대로 유지</span><strong>{formatUsd(holdBalance)}</strong></article><article><span>선택을 바꿨다면</span><strong>{formatUsd(expectedBalance)}</strong></article></div>
+            <p className="comparison-copy">선택을 바꾼 경우가 {formatUsd(Math.abs(choiceDifference))} {choiceDifference >= 0 ? '더 많아요.' : '더 적어요.'}</p>
+          </section>
+
+          <section className="composition-section">
+            <div className="section-heading"><h2>예상 잔고 구성</h2><p>평가일의 예시 가격으로 나눠 봤어요.</p></div>
+            <dl><div><dt>{selectedStock.name} {expectedShares}주</dt><dd>{formatUsd(newHoldingNow)}</dd></div>{fundingSource !== 'cash' && <div><dt>남은 애플 {remainingHolding}주</dt><dd>{formatUsd(existingHoldingNow)}</dd></div>}<div><dt>남은 현금</dt><dd>{formatUsd(remainingCash)}</dd></div></dl>
+          </section>
+
+          <details className="conditions-card">
+            <summary>계산 조건 보기</summary>
+            <dl><div><dt>가상 매수일</dt><dd>{selectedDate}</dd></div><div><dt>원래 예수금</dt><dd>{formatUsd(fundingSource === 'stock' ? 0 : cashValue)}</dd></div>{fundingSource !== 'cash' && <div><dt>애플 매도 수량</dt><dd>{sellValue}주 · 주당 $100.00</dd></div>}<div><dt>투자 예산</dt><dd>{formatUsd(budget)}</dd></div><div><dt>실제 매수액</dt><dd>{formatUsd(actualPurchase)}</dd></div><div><dt>평가 기준일</dt><dd>2026-09-21</dd></div></dl>
+            <p>선택한 날짜의 종가로 매도·매수한 뒤 보유했다고 가정했어요. 세금·수수료·배당과 기업행동은 반영하지 않았어요.</p>
+          </details>
+
+          <section className="memo-section">
+            <div className="section-heading"><h2>복기 메모</h2><p>그때의 판단을 남겨두면 나중에 다시 볼 수 있어요.</p></div>
+            {showMemoEditor ? <div className="memo-editor"><label htmlFor="result-memo">그때 왜 관심이 갔나요?</label><textarea id="result-memo" maxLength={1000} value={memoDraft} onChange={(event) => setMemoDraft(event.target.value)} placeholder="관심을 가진 이유와 실행하지 않은 이유를 적어보세요."/><div><span>{memoDraft.length}/1,000</span><button type="button" onClick={() => { setMemoDraft(savedMemo); setShowMemoEditor(false) }}>취소</button><button type="button" onClick={saveMemo}>저장</button></div></div> : <div className="memo-view"><p>{savedMemo || '아직 작성한 메모가 없어요.'}</p><button type="button" onClick={() => setShowMemoEditor(true)}>{savedMemo ? '메모 수정' : '메모 작성'}</button></div>}
+          </section>
+
+          <div className="result-actions"><button type="button" onClick={() => window.history.back()}>조건 바꿔 계산</button><button type="button" onClick={() => setNotice('실제 최신 시세 연결 후 새 평가 기록을 만들 수 있어요.')}>최신 기준으로 다시 계산</button></div>
+          <button className="inline-action" type="button" onClick={() => openDetail(selectedStock)}>관련 종목 둘러보기</button>
+          {notice && <p className="form-notice" role="status">{notice}</p>}
+        </section>
+      </main>
+    )
   }
 
   if (screen === 'simulate') {
