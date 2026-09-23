@@ -23,7 +23,7 @@
 
 ## 최근 확인 결과
 
-- GitHub 저장소 `https://github.com/LlO93/ifi`를 로컬 `origin`으로 연결했다. 기존 원격 이력을 보존해 현재 로컬 버전을 `main`에 반영하는 첫 Git 업로드를 진행했다.
+- GitHub 저장소 `https://github.com/LlO93/ifi`를 로컬 `origin`으로 연결하고 기존 원격 이력을 현재 로컬 `main`에 병합했다. 로컬 커밋은 준비됐지만 이 컴퓨터의 GitHub 인증이 없어 원격 푸시는 대기 중이다.
 - `.gitignore`가 `.env.local`과 기타 `.env.*`를 제외하며 `.env.example`만 허용하는 것을 확인했다. 개인 API 키 파일은 Git 추적 대상이 아니다.
 - 컨텍스트 절약 구조를 추가했다: `AGENTS.md`, 이 문서, `component-structure.md`를 갱신했고 현황 문서는 120줄 제한 안에 있다.
 - 개인 Alpha Vantage 키 적용 후 AAPL 일별 데이터 조회 성공: 99개 거래일, 당시 마지막 자료 2026-09-21 종가 $338.98. 날짜는 실행 시점에 달라질 수 있다.
