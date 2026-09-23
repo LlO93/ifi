@@ -25,6 +25,8 @@
 - `js/supabase.js`는 Vite의 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`로 공식 Supabase 클라이언트를 준비한다. 실제 값은 저장소에 넣지 않았고 로그인 방식이 정해지기 전까지 기록은 `localStorage`를 유지한다.
 - 개인 기록 인증은 Supabase 이메일 로그인을 추가하지 않고 앱인토스 토스 로그인을 기준으로 설계한다. 클라이언트의 `appLogin` 인가 코드는 서버에서 토큰 교환·사용자 확인해야 하므로, 현재 `auth.uid()` 기반 개인 RLS를 그대로 연결하지 않는다.
 - 앱인토스 앱 생성은 완료했지만 앱 정보 입력·검토 요청·최종 승인은 완료로 확인되지 않았다.
+- `invest-if/`에 공식 `create-ait-app` React·Vite 프로젝트를 생성했다. Apps in Toss Web Framework 3.2.0, 개발 도구, `apps-in-toss.config.ts`, 디자인 가이드·토큰·React/SVG 아이콘·Tossface가 포함된다.
+- 루트의 기존 Vite 프로토타입은 삭제하지 않았다. 다음 화면 작업에서 기존 6페이지와 데모 로직을 `invest-if/src/`로 선별 이전한다.
 
 ## 최근 확인 결과
 
@@ -39,10 +41,11 @@
 - Supabase JavaScript 클라이언트 2.117.1 추가 후 Vite 빌드와 기존 시세 테스트 5개가 모두 통과했다.
 - `.env.local`, 서버 소스 등 허용하지 않은 HTTP 경로는 404로 확인했다.
 - 로컬 서버 실행 주소는 `http://127.0.0.1:4173`, 명령은 `npm start`다.
+- `invest-if/`에서 `npm run build`가 성공했고 Vite `dist/`와 `invest-if.ait`가 생성됐다. 개발 서버도 `http://127.0.0.1:5173/`에서 실행됨을 확인했다.
 
 ## 다음 우선 작업
 
-1. 기존 Vite 프로젝트에 앱인토스 WebView SDK·개발 도구를 연결하고 `.ait` 빌드가 가능한 구조로 맞춘다.
+1. `invest-if/src/`에 앱인토스 제약을 준수하는 첫 화면을 만들고, 루트 프로토타입의 6페이지 흐름을 순차적으로 이전한다. 먼저 `invest-if/AGENTS.md`, `invest-if/docs/design-guide.md`, 기존 `화면설계.md`를 본다.
 2. 토스 로그인 인가 코드를 교환하고 사용자 식별을 검증할 백엔드 경계를 설계한다. 토큰과 서비스 키는 클라이언트에 두지 않는다.
 3. 검증된 토스 사용자 식별자를 기준으로 개인 기록을 저장하도록 Supabase 스키마·RLS 또는 서버 전용 접근 구조를 수정한 뒤 `localStorage` 기록을 이전한다.
 4. 실제 가격 기반 계산에 필요한 주식 분할 데이터와 지원 불가 기업행동 범위를 조사·연결한다.
@@ -60,6 +63,7 @@
 | 제품 범위 | `시작아이디어.md`의 확정 MVP | `MVP개발명세.md` |
 | 서버 실행·키 | `실제데이터연결.md` | `.env.example`, `server/index.mjs` |
 | 파일 구조 변경 | `component-structure.md` | `AGENTS.md`의 4절 |
+| 앱인토스 화면 | `invest-if/AGENTS.md`, `invest-if/docs/design-guide.md` | `화면설계.md`, 루트 프로토타입의 해당 화면 |
 
 ## 작업 종료 시 갱신 규칙
 

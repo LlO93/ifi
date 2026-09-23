@@ -33,7 +33,7 @@
   - `MVP개발명세.md`: 기능 범위, 계산 규칙, 데이터·구현 명세.
   - `화면설계.md`: 페이지 구성, 레이아웃, 화면별 상호작용.
   - `시작아이디어_초기안.md`: 과거 아이디어 참고용. 현재 요구사항으로 자동 적용하지 않는다.
-- 현재 루트의 `index.html`, `style.css`, `app.js`는 최신 6페이지 화면 시안을 역할별로 분리한 파일이다. Vite 진입점 `main.js`가 JavaScript를 `js/components.js` → `js/supabase.js` → `js/records.js` → `js/demo-flow.js` → `app.js` → `js/live-market.js` 순서로 불러온다. `js/supabase.js`는 실제 값을 저장하지 않고 Vite 환경 변수로 Supabase 브라우저 클라이언트를 준비한다. `js/demo-flow.js`는 고정 가상 가격과 입력값으로 날짜 선택·자금 검증·예상 잔고 비교를 제공하는 데모이며 실제 시세·기업행동을 처리하는 출시용 계산과 구분한다. `js/records.js`는 로그인 방식이 정해지기 전까지 브라우저 내 데모 기록·메모 저장을 담당하며 서버·계정 저장과 구분한다. 이전 정적 프로토타입은 `archive/날짜-시간/` 아래에 보존한다. 실제 시세 탭은 `server/index.mjs`와 `server/market.mjs`의 개인 개발용 서버로 연결하며 키 없는 상태는 공식 IBM 예제 조회다. 실행·키 설정은 `실제데이터연결.md`를 참고한다. 전체 구조는 `component-structure.md`를 참고한다. 파일 구조가 바뀌면 이 안내도 갱신한다.
+- 앱인토스 출시용 공식 React·Vite 프로젝트는 `invest-if/`에 있다. `apps-in-toss.config.ts`, Web Framework 3.2.0, 개발 도구와 디자인 가이드가 연결돼 있으며 `npm run build`가 웹 번들과 `invest-if.ait`를 만든다. 루트의 `index.html`, `style.css`, `app.js`와 `js/`는 기존 6페이지 화면·계산·기록을 옮길 때 참고하는 프로토타입이다. `js/demo-flow.js`는 고정 가상 가격 기반 데모이며 출시용 계산과 구분한다. 실제 시세 탭은 `server/index.mjs`와 `server/market.mjs`의 개인 개발용 서버로 연결한다. 실행·키 설정은 `실제데이터연결.md`, 전체 구조는 `component-structure.md`를 참고한다. 파일 구조가 바뀌면 이 안내도 갱신한다.
 - 문서 간 충돌이 있으면 최신 사용자 지시와 명시된 확정 사항을 우선 확인한다. 작업 결과에 영향을 주는 모호함만 사용자에게 질문한다.
 - 로컬에서 접근 가능한 파일은 AI가 직접 검색하고 읽는다. 사용자에게 프로젝트 전체나 파일 전체를 반복해서 붙여 넣도록 요청하지 않는다.
 - 파일에 접근할 수 없는 대화 환경에서는 기획 요약과 파일 구조를 먼저 받고, 필요한 관련 코드만 구체적으로 요청한다.

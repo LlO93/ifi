@@ -3,6 +3,12 @@
 ```text
 모의투자앱/
 ├── PROJECT_STATUS.md       — 작업 시작 시 먼저 읽고 종료 시 갱신하는 현재 상태 요약
+├── invest-if/              — 앱인토스 출시용 공식 React·Vite 프로젝트
+│   ├── apps-in-toss.config.ts — appName·브랜드·권한·웹 번들 설정
+│   ├── vite.config.ts       — React와 Apps in Toss 개발 도구 연결
+│   ├── src/                 — 최종 미니앱 화면·스타일·아이콘
+│   ├── docs/design-guide.md — 앱인토스 화면 디자인 규칙
+│   └── package.json         — 개발·린트·웹/.ait 빌드 명령
 ├── index.html              — 앱 기본 HTML과 CSS·JavaScript 로딩 순서
 ├── main.js                 — Vite 진입점과 기존 JavaScript 모듈 실행 순서
 ├── style.css               — 전체 화면의 색상·레이아웃·컴포넌트 스타일
@@ -34,6 +40,8 @@
 ## 로딩과 역할
 
 - 다음 작업의 컨텍스트는 `PROJECT_STATUS.md`에서 시작한다. 전체 구조를 다시 읽기보다 작업별 파일 안내에 따라 필요한 파일만 확인한다.
+- `invest-if/`는 `create-ait-app`으로 생성한 최종 출시용 기반이다. 이후 화면과 로직은 이 폴더로 옮기고, 루트 프로토타입은 이전 기준으로 사용한다.
+- `invest-if/`의 `npm run build`는 TypeScript·Vite 빌드 후 Apps in Toss CLI로 `invest-if.ait`를 만든다. `dist/`, `*.ait`, `node_modules/`는 Git에 추적하지 않는다.
 
 - `index.html`은 Vite 진입점 `main.js`를 모듈로 불러오며, `main.js`가 `js/components.js` → `js/supabase.js` → `js/records.js` → `js/demo-flow.js` → `app.js` → `js/live-market.js` 순서로 실행한다.
 - `npm run build`는 Vite로 배포용 `dist/`를 만들며, `dist/`와 로컬 Vercel 연결 정보는 Git에서 제외한다.
