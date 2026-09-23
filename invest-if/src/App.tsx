@@ -6,6 +6,8 @@ import './App.css'
 type RankingMetric = 'volume' | 'marketCap'
 type DetailTab = 'chart' | 'related'
 type ChartRange = '1개월' | '6개월' | '1년' | '전체'
+type FundingSource = 'cash' | 'stock' | 'both'
+type BudgetChoice = '100' | '50' | '30' | 'custom'
 
 type Stock = {
   name: string
@@ -29,11 +31,19 @@ const stocks: Stock[] = [
 const RECENT_SEARCHES_KEY = 'invest-if.recent-searches.v1'
 
 function App() {
-  const [screen, setScreen] = useState<'explore' | 'search' | 'detail'>('explore')
+  const [screen, setScreen] = useState<'explore' | 'search' | 'detail' | 'simulate'>('explore')
   const [selectedStock, setSelectedStock] = useState<Stock>(stocks[0])
   const [detailTab, setDetailTab] = useState<DetailTab>('chart')
   const [chartRange, setChartRange] = useState<ChartRange>('6개월')
   const [selectedDate, setSelectedDate] = useState('')
+  const [fundingSource, setFundingSource] = useState<FundingSource>('cash')
+  const [cashAmount, setCashAmount] = useState('')
+  const [holdingQuantity, setHoldingQuantity] = useState('10')
+  const [sellQuantity, setSellQuantity] = useState('0')
+  const [budgetChoice, setBudgetChoice] = useState<BudgetChoice>('100')
+  const [customBudget, setCustomBudget] = useState('')
+  const [saveFunds, setSaveFunds] = useState(false)
+  const [simulateError, setSimulateError] = useState('')
   const [metric, setMetric] = useState<RankingMetric>('volume')
   const [showAll, setShowAll] = useState(false)
   const [notice, setNotice] = useState('')
@@ -70,6 +80,12 @@ function App() {
         const stock = stocks.find((item) => item.ticker === event.state.ticker)
         if (stock) setSelectedStock(stock)
         setScreen('detail')
+        return
+      }
+      if (event.state?.screen === 'simulate') {
+        const stock = stocks.find((item) => item.ticker === event.state.ticker)
+        if (stock) setSelectedStock(stock)
+        setScreen('simulate')
         return
       }
       setScreen(event.state?.screen === 'search' ? 'search' : 'explore')
@@ -143,6 +159,111 @@ function App() {
     openDetail(stock)
   }
 
+  const openSimulation = () => {
+    setNotice('')
+    setSimulateError('')
+    setScreen('simulate')
+    window.history.pushState({ screen: 'simulate', ticker: selectedStock.ticker }, '')
+  }
+
+  const stockPrice = Number(selectedStock.price.replace(/[$,]/g, ''))
+  const cashValue = Number(cashAmount) || 0
+  const holdingValue = Number(holdingQuantity) || 0
+  const sellValue = Number(sellQuantity) || 0
+  const estimatedSale = fundingSource === 'cash' ? 0 : sellValue * 100
+  const availableFunds = (fundingSource === 'stock' ? 0 : cashValue) + estimatedSale
+  const budget = budgetChoice === 'custom' ? Number(customBudget) || 0 : availableFunds * Number(budgetChoice) / 100
+  const expectedShares = stockPrice > 0 ? Math.floor(budget / stockPrice) : 0
+  const remainingCash = Math.max(0, availableFunds - expectedShares * stockPrice)
+
+  const calculateSimulation = () => {
+    if (!selectedDate) {
+      setSimulateError('가상 매수일을 선택해 주세요. 날짜를 선택하면 당시 종가를 확인할 수 있어요.')
+      return
+    }
+    if (fundingSource !== 'stock' && cashValue <= 0) {
+      setSimulateError('예수금을 0보다 크게 입력해 주세요.')
+      return
+    }
+    if (fundingSource !== 'cash' && (holdingValue <= 0 || sellValue <= 0 || sellValue > holdingValue)) {
+      setSimulateError('팔 수량은 1주 이상, 당시 보유 수량 이하여야 해요.')
+      return
+    }
+    if (budget <= 0 || budget > availableFunds) {
+      setSimulateError('투자금은 가용 자금 안에서 입력해 주세요.')
+      return
+    }
+    if (expectedShares < 1) {
+      setSimulateError(`${selectedStock.name} 1주를 사려면 최소 ${selectedStock.price}가 필요해요.`)
+      return
+    }
+    setSimulateError('')
+    setNotice('입력값을 확인했어요. 계산 결과 화면은 다음 단계에서 연결할게요.')
+  }
+
+  if (screen === 'simulate') {
+    const usesCash = fundingSource !== 'stock'
+    const usesStock = fundingSource !== 'cash'
+    return (
+      <main className="simulate-screen canvas" style={{ '--safe-area-bottom': `${safeAreaBottom}px` } as React.CSSProperties}>
+        <section className="simulate-content" aria-labelledby="simulate-title">
+          <header className="simulate-heading">
+            <p className="eyebrow">{selectedStock.name} · {selectedStock.ticker}</p>
+            <h1 id="simulate-title">이날 샀다면?</h1>
+            <p>과거에 사용할 수 있었던 자금으로 지금의 예상 잔고를 계산해요.</p>
+          </header>
+
+          <section className="form-section">
+            <div className="section-heading"><h2>가상 매수일</h2><p>미국 증시가 열린 날을 선택해 주세요.</p></div>
+            <label className="field-label" htmlFor="simulation-date">날짜</label>
+            <input id="simulation-date" className="form-input" type="date" max="2026-09-21" value={selectedDate} onChange={(event) => { setSelectedDate(event.target.value); setSimulateError('') }} />
+            {selectedDate && <p className="field-help">당시 예시 종가 {selectedStock.price}</p>}
+          </section>
+
+          <section className="form-section">
+            <div className="section-heading"><h2>어떤 자금을 쓸까요?</h2><p>선택한 날짜에 실제로 사용할 수 있었던 자금만 입력해 주세요.</p></div>
+            <div className="choice-grid three" role="radiogroup" aria-label="자금 원천">
+              {([['cash', '예수금'], ['stock', '주식 정리'], ['both', '둘 다']] as const).map(([value, label]) => <button key={value} type="button" role="radio" aria-checked={fundingSource === value} onClick={() => { setFundingSource(value); setSimulateError('') }}>{label}</button>)}
+            </div>
+            <button className="inline-action" type="button" onClick={() => setNotice('저장한 과거 자금 기록은 계정 저장을 연결한 뒤 불러올 수 있어요.')}>과거 자금 기록 불러오기</button>
+
+            {usesCash && <div className="field-block"><label className="field-label" htmlFor="cash-amount">당시 예수금</label><div className="money-input"><span>$</span><input id="cash-amount" inputMode="decimal" placeholder="0.00" value={cashAmount} onChange={(event) => { setCashAmount(event.target.value.replace(/[^0-9.]/g, '')); setSimulateError('') }} /></div></div>}
+
+            {usesStock && <article className="holding-card">
+              <div><strong>애플</strong><small>AAPL · 당시 예시 종가 $100.00</small></div>
+              <div className="quantity-fields">
+                <label>당시 보유 수량<input inputMode="numeric" value={holdingQuantity} onChange={(event) => setHoldingQuantity(event.target.value.replace(/\D/g, ''))} /></label>
+                <label>팔 수량<span className="input-with-action"><input inputMode="numeric" value={sellQuantity} onChange={(event) => { setSellQuantity(event.target.value.replace(/\D/g, '')); setSimulateError('') }} /><button type="button" onClick={() => setSellQuantity(holdingQuantity)}>전량</button></span></label>
+              </div>
+              <p>예상 매도 대금 <strong>${estimatedSale.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></p>
+            </article>}
+          </section>
+
+          <section className="fund-summary" aria-live="polite"><span>가용 자금</span><strong>${availableFunds.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong><small>예수금과 예상 매도 대금의 합계예요.</small></section>
+
+          <section className="form-section">
+            <div className="section-heading"><h2>얼마를 투자할까요?</h2><p>가용 자금 안에서 선택할 수 있어요.</p></div>
+            <div className="choice-grid four" role="radiogroup" aria-label="투자 비중">
+              {([['100', '100%'], ['50', '50%'], ['30', '30%'], ['custom', '직접 입력']] as const).map(([value, label]) => <button key={value} type="button" role="radio" aria-checked={budgetChoice === value} onClick={() => { setBudgetChoice(value); setSimulateError('') }}>{label}</button>)}
+            </div>
+            {budgetChoice === 'custom' && <div className="money-input custom-budget"><span>$</span><input inputMode="decimal" aria-label="직접 입력 투자금" placeholder="0.00" value={customBudget} onChange={(event) => { setCustomBudget(event.target.value.replace(/[^0-9.]/g, '')); setSimulateError('') }} /></div>}
+          </section>
+
+          <section className="trade-summary">
+            <div className="section-heading"><h2>거래 요약</h2><p>선택한 날짜 종가로 거래했다고 가정해요.</p></div>
+            <dl><div><dt>투자 예산</dt><dd>${budget.toLocaleString('en-US', { maximumFractionDigits: 2 })}</dd></div><div><dt>예상 매수 수량</dt><dd>{expectedShares}주</dd></div>{usesStock && <div><dt>남는 애플</dt><dd>{Math.max(0, holdingValue - sellValue)}주</dd></div>}<div><dt>거래 후 현금</dt><dd>${remainingCash.toLocaleString('en-US', { maximumFractionDigits: 2 })}</dd></div></dl>
+          </section>
+
+          <label className="save-option"><input type="checkbox" checked={saveFunds} onChange={(event) => setSaveFunds(event.target.checked)} /><span>이 날짜의 자금 기록으로 저장</span></label>
+          {notice && <p className="form-notice" role="status">{notice}</p>}
+          {simulateError && <p className="form-error" role="alert">{simulateError}</p>}
+        </section>
+
+        <div className="simulate-cta"><p>세금·수수료·배당은 계산에서 제외해요.</p><button type="button" onClick={calculateSimulation}>현재 예상 잔고 계산하기</button></div>
+      </main>
+    )
+  }
+
   if (screen === 'detail') {
     const relatedStocks = stocks.filter((stock) => stock.ticker !== selectedStock.ticker).slice(0, 3)
     const chartPoints = '0,128 42,112 84,120 126,78 168,91 210,54 252,66 294,30 336,42'
@@ -180,7 +301,7 @@ function App() {
                 {(['1개월', '6개월', '1년', '전체'] as ChartRange[]).map((range) => <button key={range} type="button" aria-pressed={chartRange === range} onClick={() => setChartRange(range)}>{range}</button>)}
               </div>
 
-              <button className="selected-date" type="button" onClick={() => setSelectedDate(selectedDate === '2025.04.07' ? '2025.08.18' : '2025.04.07')}>
+              <button className="selected-date" type="button" onClick={() => setSelectedDate(selectedDate === '2025-04-07' ? '2025-08-18' : '2025-04-07')}>
                 <span><small>{selectedDate ? '선택한 날짜' : '가상 매수일'}</small><strong>{selectedDate ? `${selectedDate} · ${selectedStock.price}` : '아직 선택하지 않았어요'}</strong></span>
                 <span>{selectedDate ? '날짜 변경' : '날짜 선택'}</span>
               </button>
@@ -199,7 +320,7 @@ function App() {
           )}
         </section>
 
-        <div className="detail-cta"><button type="button" onClick={() => setNotice(selectedDate ? `${selectedStock.ticker} 가상 매수 입력은 다음 단계에서 연결할게요.` : '가상 매수일은 다음 화면에서 선택할 수 있어요.')}>{selectedStock.ticker} 이날 샀다면?</button>{notice && <p role="status">{notice}</p>}</div>
+        <div className="detail-cta"><button type="button" onClick={openSimulation}>{selectedStock.ticker} 이날 샀다면?</button>{notice && <p role="status">{notice}</p>}</div>
       </main>
     )
   }
