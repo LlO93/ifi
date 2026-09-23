@@ -8,6 +8,7 @@ type DetailTab = 'chart' | 'related'
 type ChartRange = '1개월' | '6개월' | '1년' | '전체'
 type FundingSource = 'cash' | 'stock' | 'both'
 type BudgetChoice = '100' | '50' | '30' | 'custom'
+type RecordFilter = 'all' | FundingSource
 
 type Stock = {
   name: string
@@ -17,6 +18,22 @@ type Stock = {
   volumeRank: number
   marketCapRank: number
   metric: { volume: string; marketCap: string }
+}
+
+type RecordSnapshot = {
+  id: number
+  ticker: string
+  selectedDate: string
+  evaluatedDate: string
+  fundingSource: FundingSource
+  cashAmount: string
+  holdingQuantity: string
+  sellQuantity: string
+  budgetChoice: BudgetChoice
+  customBudget: string
+  expectedBalance: number
+  choiceDifference: number
+  memo: string
 }
 
 const stocks: Stock[] = [
@@ -30,6 +47,7 @@ const stocks: Stock[] = [
 
 const RECENT_SEARCHES_KEY = 'invest-if.recent-searches.v1'
 const RESULT_MEMO_KEY = 'invest-if.result-memo.v1'
+const RECORDS_KEY = 'invest-if.records.v1'
 
 const formatUsd = (value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const formatSignedUsd = (value: number) => `${value >= 0 ? '+' : '-'}${formatUsd(Math.abs(value))}`
@@ -40,9 +58,17 @@ const readResultMemo = () => {
     return ''
   }
 }
+const readRecords = (): RecordSnapshot[] => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RECORDS_KEY) ?? '[]')
+    return Array.isArray(saved) ? saved : []
+  } catch {
+    return []
+  }
+}
 
 function App() {
-  const [screen, setScreen] = useState<'explore' | 'search' | 'detail' | 'simulate' | 'result'>('explore')
+  const [screen, setScreen] = useState<'explore' | 'search' | 'detail' | 'simulate' | 'result' | 'records'>('explore')
   const [selectedStock, setSelectedStock] = useState<Stock>(stocks[0])
   const [detailTab, setDetailTab] = useState<DetailTab>('chart')
   const [chartRange, setChartRange] = useState<ChartRange>('6개월')
@@ -58,6 +84,11 @@ function App() {
   const [showMemoEditor, setShowMemoEditor] = useState(false)
   const [memoDraft, setMemoDraft] = useState(readResultMemo)
   const [savedMemo, setSavedMemo] = useState(readResultMemo)
+  const [records, setRecords] = useState<RecordSnapshot[]>(readRecords)
+  const [activeRecordId, setActiveRecordId] = useState<number | null>(null)
+  const [recordQuery, setRecordQuery] = useState('')
+  const [recordFilter, setRecordFilter] = useState<RecordFilter>('all')
+  const [recordSaveFailed, setRecordSaveFailed] = useState(false)
   const [metric, setMetric] = useState<RankingMetric>('volume')
   const [showAll, setShowAll] = useState(false)
   const [notice, setNotice] = useState('')
@@ -108,6 +139,10 @@ function App() {
         setScreen('result')
         return
       }
+      if (event.state?.screen === 'records') {
+        setScreen('records')
+        return
+      }
       setScreen(event.state?.screen === 'search' ? 'search' : 'explore')
     }
     window.addEventListener('popstate', onPopState)
@@ -136,7 +171,6 @@ function App() {
     [metric],
   )
   const visibleStocks = showAll ? rankedStocks : rankedStocks.slice(0, 5)
-  const announceNextScreen = (screen: string) => setNotice(`${screen} 화면은 다음 이전 단계에서 연결할게요.`)
   const searchResults = useMemo(() => {
     const normalized = debouncedQuery.toLocaleLowerCase('ko-KR')
     if (!normalized) return []
@@ -182,8 +216,17 @@ function App() {
   const openSimulation = () => {
     setNotice('')
     setSimulateError('')
+    setMemoDraft('')
+    setSavedMemo('')
+    setActiveRecordId(null)
     setScreen('simulate')
     window.history.pushState({ screen: 'simulate', ticker: selectedStock.ticker }, '')
+  }
+
+  const openRecords = () => {
+    setNotice('')
+    setScreen('records')
+    window.history.pushState({ screen: 'records' }, '')
   }
 
   const stockPrice = Number(selectedStock.price.replace(/[$,]/g, ''))
@@ -230,6 +273,20 @@ function App() {
     }
     setSimulateError('')
     setNotice('')
+    const record: RecordSnapshot = {
+      id: Date.now(), ticker: selectedStock.ticker, selectedDate, evaluatedDate: '2026-09-21', fundingSource,
+      cashAmount, holdingQuantity, sellQuantity, budgetChoice, customBudget, expectedBalance, choiceDifference, memo: savedMemo,
+    }
+    const nextRecords = [record, ...records]
+    setRecords(nextRecords)
+    setActiveRecordId(record.id)
+    try {
+      localStorage.setItem(RECORDS_KEY, JSON.stringify(nextRecords))
+      setRecordSaveFailed(false)
+    } catch {
+      setRecordSaveFailed(true)
+      setNotice('계산 결과는 볼 수 있지만 이 기기의 기록 목록에는 저장하지 못했어요.')
+    }
     setScreen('result')
     window.history.pushState({ screen: 'result', ticker: selectedStock.ticker }, '')
   }
@@ -240,11 +297,60 @@ function App() {
     setShowMemoEditor(false)
     try {
       localStorage.setItem(RESULT_MEMO_KEY, nextMemo)
+      if (activeRecordId != null) {
+        const nextRecords = records.map((record) => record.id === activeRecordId ? { ...record, memo: nextMemo } : record)
+        setRecords(nextRecords)
+        localStorage.setItem(RECORDS_KEY, JSON.stringify(nextRecords))
+      }
     } catch {
       setNotice('메모를 이 기기에 저장하지 못했어요. 내용을 복사한 뒤 다시 시도해 주세요.')
       return
     }
     setNotice(nextMemo ? '복기 메모를 이 기기에 저장했어요.' : '저장된 복기 메모를 비웠어요.')
+  }
+
+  const openRecord = (record: RecordSnapshot) => {
+    const stock = stocks.find((item) => item.ticker === record.ticker)
+    if (!stock) return
+    setSelectedStock(stock)
+    setSelectedDate(record.selectedDate)
+    setFundingSource(record.fundingSource)
+    setCashAmount(record.cashAmount)
+    setHoldingQuantity(record.holdingQuantity)
+    setSellQuantity(record.sellQuantity)
+    setBudgetChoice(record.budgetChoice)
+    setCustomBudget(record.customBudget)
+    setMemoDraft(record.memo)
+    setSavedMemo(record.memo)
+    setActiveRecordId(record.id)
+    setRecordSaveFailed(false)
+    setNotice('')
+    setScreen('result')
+    window.history.pushState({ screen: 'result', ticker: stock.ticker, recordId: record.id }, '')
+  }
+
+  if (screen === 'records') {
+    const normalizedQuery = recordQuery.trim().toLocaleLowerCase('ko-KR')
+    const filteredRecords = records.filter((record) => {
+      const stock = stocks.find((item) => item.ticker === record.ticker)
+      const matchesQuery = !normalizedQuery || `${stock?.name ?? ''} ${record.ticker}`.toLocaleLowerCase('ko-KR').includes(normalizedQuery)
+      return matchesQuery && (recordFilter === 'all' || record.fundingSource === recordFilter)
+    })
+    return (
+      <main className="records-screen canvas" style={{ '--safe-area-bottom': `${safeAreaBottom}px` } as React.CSSProperties}>
+        <section className="records-content" aria-labelledby="records-title">
+          <header className="records-heading"><p className="eyebrow">이 브라우저에서 만든 기록</p><h1 id="records-title">내 기록</h1><p>총 {records.length}개 · 계정 동기화 전까지 이 기기에만 보관돼요.</p></header>
+          <label className="records-search"><Search size={20}/><span className="sr-only">기록 종목 검색</span><input value={recordQuery} onChange={(event) => setRecordQuery(event.target.value)} placeholder="종목명 또는 티커 검색"/>{recordQuery && <button type="button" onClick={() => setRecordQuery('')} aria-label="기록 검색어 지우기"><Close size={18}/></button>}</label>
+          <div className="record-filters" role="radiogroup" aria-label="자금 원천 필터">{([['all', '전체'], ['cash', '예수금'], ['stock', '주식 정리'], ['both', '혼합']] as const).map(([value, label]) => <button key={value} type="button" role="radio" aria-checked={recordFilter === value} onClick={() => setRecordFilter(value)}>{label}</button>)}</div>
+
+          {filteredRecords.length > 0 ? <ul className="record-list">{filteredRecords.map((record) => {
+            const stock = stocks.find((item) => item.ticker === record.ticker)
+            return <li key={record.id}><button type="button" onClick={() => openRecord(record)}><span className="record-title"><strong>{stock?.name ?? record.ticker}</strong><small>{record.ticker} · {record.selectedDate} → {record.evaluatedDate}</small></span><span className="record-value"><strong>{formatUsd(record.expectedBalance)}</strong><small>유지 대비 {formatSignedUsd(record.choiceDifference)}</small></span><ChevronRight size={20}/>{record.memo && <span className="record-memo">{record.memo}</span>}</button></li>
+          })}</ul> : <section className="records-empty"><h2>{records.length === 0 ? '아직 계산한 기록이 없어요' : '조건에 맞는 기록이 없어요'}</h2><p>{records.length === 0 ? '관심 종목을 골라 과거에 샀다면 지금 얼마인지 계산해 보세요.' : '검색어나 자금 유형을 바꿔 다시 찾아보세요.'}</p><button type="button" onClick={() => { setScreen('explore'); window.history.pushState({ screen: 'explore' }, '') }}>종목 둘러보기</button></section>}
+        </section>
+        <nav className="bottom-navigation" aria-label="주요 메뉴"><button type="button" onClick={() => { setScreen('explore'); window.history.pushState({ screen: 'explore' }, '') }}>둘러보기</button><button type="button" aria-current="page">내 기록</button></nav>
+      </main>
+    )
   }
 
   if (screen === 'result') {
@@ -255,7 +361,7 @@ function App() {
             <p className="eyebrow">계산 결과 · 예시 데이터</p>
             <h1 id="result-title">{selectedStock.name}을 샀다면</h1>
             <p>{selectedDate} 가상 매수 → 2026-09-21 평가</p>
-            <span className="save-status">예시 결과 · 서버에 저장되지 않음</span>
+            <span className="save-status">{recordSaveFailed ? '예시 결과 · 기록 저장 실패' : '이 브라우저에 자동 저장됨 · 계정 동기화 안 됨'}</span>
           </header>
 
           <section className="balance-hero" aria-label="현재 예상 잔고">
@@ -548,7 +654,7 @@ function App() {
 
       <nav className="bottom-navigation" aria-label="주요 메뉴">
         <button type="button" aria-current="page">둘러보기</button>
-        <button type="button" onClick={() => announceNextScreen('내 기록')}>내 기록</button>
+        <button type="button" onClick={openRecords}>내 기록</button>
       </nav>
     </main>
   )
