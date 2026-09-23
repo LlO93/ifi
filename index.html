@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>그 주식 샀다면 — 화면 시안</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./js/components.js" defer></script>
+  <script src="./js/records.js" defer></script>
+  <script src="./js/demo-flow.js" defer></script>
+  <script src="./app.js" defer></script>
+  <script src="./js/live-market.js" defer></script>
+</head>
+<body>
+<div id="if-layout" aria-label="그 주식 샀다면 모바일 화면 구성 시안">
+<div id="if-data-mode" class="if-tabs if-mode"><button data-mode="live" aria-pressed="true">실제 시세 조회</button><button data-mode="demo" aria-pressed="false">데모 계산·기록</button></div>
+<section id="if-live" class="if-live" aria-label="실제 주가 조회"></section>
+<div id="if-demo" hidden>
+<div class="if-picker"><label for="if-screen">화면 구성 <span class="if-small">· MVP 6개 페이지</span></label><select id="if-screen"><option value="home">01 둘러보기</option><option value="search">02 종목 검색</option><option value="stock">03 종목 상세</option><option value="input">04 가상 매수 입력</option><option value="result">05 결과 · 기록 상세</option><option value="history">06 내 기록</option></select></div>
+<div class="if-status">데모 체험 · 가상 종목과 가격으로 계산해요. 실제 시세가 아니며 기록은 이 브라우저에만 저장돼요.</div><div class="if-phone" id="if-stage"></div>
+</div>
+</div>
+</body>
+</html>
