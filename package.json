@@ -1,6 +1,6 @@
 {
   "name": "invest-if",
   "private": true,
-  "scripts": {"start": "node server/index.mjs", "test": "node --test tests/market.test.mjs"},
+  "scripts": {"start": "node server/index.mjs", "test": "node --test tests/*.test.mjs"},
   "engines": {"node": ">=22"}
 }
