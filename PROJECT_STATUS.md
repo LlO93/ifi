@@ -54,10 +54,12 @@
 - P04 연결 후 `oxlint`, TypeScript·Vite·Apps in Toss 빌드가 모두 경고 없이 통과했고 deploymentId `01a0cf84-2ecd-7f75-834e-63343df7ac71`의 새 `invest-if.ait` 번들을 생성했다.
 - P05 연결 후 `oxlint`, TypeScript·Vite·Apps in Toss 빌드가 모두 경고 없이 통과했고 deploymentId `01a0cf88-d2fe-7344-ad6b-136889fe400a`의 새 `invest-if.ait` 번들을 생성했다.
 - P06 연결 후 `oxlint`, TypeScript·Vite·Apps in Toss 빌드가 모두 경고 없이 통과했고 deploymentId `01a0cf8c-e8f3-7ce1-b557-3273aa02f83a`의 새 `invest-if.ait` 번들을 생성했다.
+- 앱인토스 콘솔 OAuth 연결 후 기존 워크스페이스의 `invest-if` 앱과 로컬 appName 일치를 확인했다. 최신 번들 버전 `20260924-2`(deploymentId `01a0cf94-0b95-77bb-88ae-7355df17597a`)를 업로드했고 콘솔 컴파일 상태 `CREATED`, SDK 3.2.0을 확인했다. 검수·출시 요청은 하지 않았다.
+- 본인 기기 테스트 발송은 콘솔 응답 `테스트 푸시를 받을 토스 유저 정보가 없어요`로 완료되지 않았다. 먼저 앱인토스 샌드박스 앱에서 개발자 로그인 후 콘솔에 등록한 토스 계정으로 토스 인증을 완료해 테스트 수신자 정보를 연결해야 한다.
 
 ## 다음 우선 작업
 
-1. 6페이지 핵심 흐름(P01~P06)을 실제 기기 테스트 후보로 정리하고 `/ait:test-on-device`로 `.ait` 번들을 업로드해 토스 앱 WebView에서 safe area·뒤로가기·키보드·긴 기록 목록을 확인한다.
+1. 앱인토스 샌드박스 앱에서 개발자 로그인·토스 인증을 완료한 뒤 버전 `20260924-2`의 테스트 발송을 다시 실행하고, WebView에서 safe area·뒤로가기·키보드·긴 기록 목록을 확인한다.
 2. 토스 로그인 인가 코드를 교환하고 사용자 식별을 검증할 백엔드 경계를 설계한다. 토큰과 서비스 키는 클라이언트에 두지 않는다.
 3. 검증된 토스 사용자 식별자를 기준으로 개인 기록을 저장하도록 Supabase 스키마·RLS 또는 서버 전용 접근 구조를 수정한 뒤 `localStorage` 기록을 이전한다.
 4. 실제 가격 기반 계산에 필요한 주식 분할 데이터와 지원 불가 기업행동 범위를 조사·연결한다.
