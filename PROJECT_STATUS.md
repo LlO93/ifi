@@ -20,6 +20,8 @@
 - 실제 시세는 아직 예상 잔고 계산과 연결하지 않았다. 순위·관련 종목·기업행동도 실제 데이터 미연결이다.
 - 데모 계산은 `js/demo-flow.js`, 브라우저 기록·복기·삭제/5초 실행 취소는 `js/records.js`가 담당한다.
 - 기록은 브라우저 `localStorage`에만 저장하며 서버·계정 동기화는 없다.
+- Supabase 프로젝트 `ifibuy`에는 계획된 8개 테이블이 모두 존재한다. 공용 4개 표는 `public_read`, 개인 4개 표는 `owner_only` 정책이 있고 모든 표에 RLS가 켜져 있음을 대시보드에서 확인했다.
+- `js/supabase.js`는 Vite의 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`로 공식 Supabase 클라이언트를 준비한다. 실제 값은 저장소에 넣지 않았고 로그인 방식이 정해지기 전까지 기록은 `localStorage`를 유지한다.
 - 앱인토스 앱 생성은 완료했지만 앱 정보 입력·검토 요청·최종 승인은 완료로 확인되지 않았다.
 
 ## 최근 확인 결과
@@ -32,15 +34,16 @@
 - Codex 번들 Node.js v24.19.0으로 `tests/market.test.mjs`를 다시 실행했으며 시세 파싱·오류·캐시·검색 필터·키 비노출 테스트 5개가 모두 통과했다. 시스템 `npm` 설치 여부와 무관하게 현재 프로젝트 테스트는 검증됐다.
 - `vite build`가 성공해 `dist/`의 HTML·CSS·JavaScript 번들을 확인했다. 현재 코드로 4174 포트에서 화면 진입점과 실제 시세 상태 API가 함께 응답했다.
 - 수업 순서는 Vite 변경 → Supabase 연결 → GitHub 반영 → Vercel 배포다. 먼저 만들었던 Vercel 선행 준비 커밋은 되돌렸고, 시험용 Vercel 프로젝트·미리보기는 정식 수업 배포로 사용하지 않는다.
+- Supabase JavaScript 클라이언트 2.117.1 추가 후 Vite 빌드와 기존 시세 테스트 5개가 모두 통과했다.
 - `.env.local`, 서버 소스 등 허용하지 않은 HTTP 경로는 404로 확인했다.
 - 로컬 서버 실행 주소는 `http://127.0.0.1:4173`, 명령은 `npm start`다.
 
 ## 다음 우선 작업
 
-1. 수업의 다음 단계인 Supabase 가이드를 따라 프로젝트·테이블·RLS와 Vite 연결 파일을 준비한다.
-2. Supabase 연결 후 기록 저장을 브라우저 `localStorage`에서 사용자별 DB 저장으로 옮길 범위를 확정한다.
-3. 실제 가격 기반 계산에 필요한 주식 분할 데이터와 지원 불가 기업행동 범위를 조사·연결한다.
-4. Supabase 연결 파일까지 GitHub에 반영한 뒤 Vercel에서 Vite / `npm run build` / `dist` 설정으로 배포한다.
+1. 앱인토스 출시 흐름에 맞는 사용자 로그인 방식을 결정한다. 현재 `owner_only` 정책은 로그인한 비익명 사용자만 개인 기록을 저장할 수 있다.
+2. 확정한 로그인 방식으로 기록 저장을 `localStorage`에서 사용자별 Supabase 저장으로 옮긴다.
+3. Supabase 연결 파일을 GitHub에 반영한 뒤 Vercel에서 환경 변수 두 개와 Vite / `npm run build` / `dist` 설정으로 배포한다.
+4. 실제 가격 기반 계산에 필요한 주식 분할 데이터와 지원 불가 기업행동 범위를 조사·연결한다.
 5. 공개 출시 전 Alpha Vantage의 외부 표시·계산·보관 권한과 앱인토스 투자 서비스 허용 범위를 확인한다.
 
 ## 작업별 파일 안내

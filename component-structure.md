@@ -9,6 +9,7 @@
 ├── app.js                  — 화면 상태·화면 생성·이동·스와이프·이벤트 처리
 ├── js/
 │   ├── components.js       — 공통 버튼·입력 필드·종목 목록 HTML 생성
+│   ├── supabase.js         — Vite 환경 변수 검증과 Supabase 브라우저 클라이언트 생성
 │   ├── records.js          — 브라우저 데모 기록 저장·조회·복기 메모·필터·삭제/실행 취소
 │   ├── demo-flow.js        — 가상 가격·차트 날짜 선택·입력 검증·데모 계산 화면
 │   └── live-market.js      — 실제 가격 조회·검색·차트·기준일 표시
@@ -34,10 +35,11 @@
 
 - 다음 작업의 컨텍스트는 `PROJECT_STATUS.md`에서 시작한다. 전체 구조를 다시 읽기보다 작업별 파일 안내에 따라 필요한 파일만 확인한다.
 
-- `index.html`은 Vite 진입점 `main.js`를 모듈로 불러오며, `main.js`가 `js/components.js` → `js/records.js` → `js/demo-flow.js` → `app.js` → `js/live-market.js` 순서로 실행한다.
+- `index.html`은 Vite 진입점 `main.js`를 모듈로 불러오며, `main.js`가 `js/components.js` → `js/supabase.js` → `js/records.js` → `js/demo-flow.js` → `app.js` → `js/live-market.js` 순서로 실행한다.
 - `npm run build`는 Vite로 배포용 `dist/`를 만들며, `dist/`와 로컬 Vercel 연결 정보는 Git에서 제외한다.
 - `components.js`는 `window.IFComponents`로 button, field, stockList를 제공한다. 종목 목록은 names와 state를 인자로 받아 HTML만 생성한다.
 - 상태 관리, 화면 렌더링, 이벤트, 뒤로가기·스와이프는 아직 `app.js`에 유지한다.
 - `demo-flow.js`는 가상 가격으로 날짜 선택, 자금 입력, 정수 주식 매수 및 잔고 비교를 제공한다. 실제 시세·기업행동 처리는 구현하지 않았다. 결과는 입력값에 따라 바뀌지만 출시용 계산 엔진은 아니다.
 - `records.js`는 `localStorage`의 `invest-if.demo-records.v1`에 입력 조건·결과·복기 메모를 저장한다. 서버·계정 동기화는 없으며 브라우저 데이터 삭제 시 기록도 사라진다. 저장 실패·잘못된 저장 형식은 안내하고 기존 데이터를 임의 초기화하지 않는다.
 - 실제 시세 조회는 `live-market.js`와 `/api/market/*`를 사용한다. 계산·기록 탭은 여전히 가상 데이터다. 개인 키가 없으면 공식 IBM 예제로 연결을 검증하고, 무료 개인 키 설정 후 지원 미국 주식 검색·조회가 가능하다. 시세의 실제 투자 계산 연결과 공개 서비스 이용 권한은 별도 확인이 필요하다.
+- `supabase.js`는 `VITE_SUPABASE_URL`과 `VITE_SUPABASE_PUBLISHABLE_KEY`가 모두 유효할 때만 클라이언트를 만들고 `window.IFSupabase`로 제공한다. 실제 값은 Vercel 환경 변수에 직접 넣으며 저장소에 기록하지 않는다. 로그인 방식이 정해지기 전까지 `records.js`는 기존 `localStorage`를 유지한다.
