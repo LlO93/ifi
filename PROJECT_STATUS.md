@@ -47,7 +47,7 @@
 - P01 이전 후 `oxlint`, TypeScript·Vite·Apps in Toss 빌드가 모두 통과했고 새 `invest-if.ait`를 생성했다. 공식 문서에서 WebView `SafeArea` API, 자동 네비게이션 바, 비게임 출시 체크리스트의 뒤로가기·최초 화면 규칙을 확인해 반영했다.
 - 첫 화면 숫자의 자간이 벌어져 흐리게 보인 원인은 `base.css`가 이모지용 Tossface를 본문 전체에 적용한 것이었다. 본문·숫자는 시스템 글꼴 스택으로 복구하고 `.tf` 클래스의 이모지만 Tossface를 사용하도록 수정했으며, 린트와 `.ait` 빌드를 다시 통과했다.
 - P02 연결 후 `oxlint`, TypeScript·Vite·Apps in Toss 빌드가 모두 경고 없이 통과했고 새 `.ait` 번들을 생성했다.
-- P03 연결 후 `oxlint`, TypeScript·Vite·Apps in Toss 빌드가 모두 경고 없이 통과했고 deploymentId `01a0cf7e-3ca8-7d5a-aaf8-c86fe33ba422`의 새 `invest-if.ait` 번들을 생성했다. 기존 5173 개발 서버는 종료된 상태였다.
+- P03 연결 후 `oxlint`, TypeScript·Vite·Apps in Toss 빌드가 모두 경고 없이 통과했고 deploymentId `01a0cf7e-3ca8-7d5a-aaf8-c86fe33ba422`의 새 `invest-if.ait` 번들을 생성했다. 5173 포트가 사용 중이어서 확인용 개발 서버는 `http://127.0.0.1:5174/`에서 실행했다.
 
 ## 다음 우선 작업
 
