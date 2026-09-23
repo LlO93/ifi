@@ -7,7 +7,7 @@ try{process.loadEnvFile(fileURLToPath(new URL('../.env.local',import.meta.url)))
 const market=createMarket({apiKey:process.env.ALPHA_VANTAGE_API_KEY||''});
 const port=Number(process.env.PORT||4173);
 const publicFiles=new Map([
-  ['/','index.html'],['/index.html','index.html'],['/style.css','style.css'],['/app.js','app.js'],
+  ['/','index.html'],['/index.html','index.html'],['/style.css','style.css'],['/main.js','main.js'],['/app.js','app.js'],
   ...['components','records','demo-flow','live-market'].map(name=>[`/js/${name}.js`,`js/${name}.js`])
 ]);
 const types={html:'text/html; charset=utf-8',css:'text/css; charset=utf-8',js:'text/javascript; charset=utf-8'};
