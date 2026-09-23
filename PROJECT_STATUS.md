@@ -43,6 +43,7 @@
 - 로컬 서버 실행 주소는 `http://127.0.0.1:4173`, 명령은 `npm start`다.
 - `invest-if/`에서 `npm run build`가 성공했고 Vite `dist/`와 `invest-if.ait`가 생성됐다. 개발 서버도 `http://127.0.0.1:5173/`에서 실행됨을 확인했다.
 - P01 이전 후 `oxlint`, TypeScript·Vite·Apps in Toss 빌드가 모두 통과했고 새 `invest-if.ait`를 생성했다. 공식 문서에서 WebView `SafeArea` API, 자동 네비게이션 바, 비게임 출시 체크리스트의 뒤로가기·최초 화면 규칙을 확인해 반영했다.
+- 첫 화면 숫자의 자간이 벌어져 흐리게 보인 원인은 `base.css`가 이모지용 Tossface를 본문 전체에 적용한 것이었다. 본문·숫자는 시스템 글꼴 스택으로 복구하고 `.tf` 클래스의 이모지만 Tossface를 사용하도록 수정했으며, 린트와 `.ait` 빌드를 다시 통과했다.
 
 ## 다음 우선 작업
 

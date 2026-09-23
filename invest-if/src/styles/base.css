@@ -13,7 +13,7 @@
 
 body {
   margin: 0;
-  font-family: "Tossface", -apple-system, system-ui, "Malgun Gothic", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, "Malgun Gothic", sans-serif;
   word-break: keep-all;
   overflow-wrap: break-word;
   letter-spacing: 0;
@@ -21,8 +21,8 @@ body {
   background: var(--color-bg);
 }
 
-/* 본문·데이터 안에 섞인 이모지를 감싸는 클래스 — Tossface 폰트 스택이 이미
-   맨 앞에 있어도, 아이콘처럼 개별 렌더를 보장해야 할 때 명시적으로 쓴다. */
+/* 본문·데이터 안에 섞인 이모지만 이 클래스로 감싸 Tossface로 렌더한다.
+   숫자와 일반 문자는 위 시스템 글꼴 스택을 유지한다. */
 .tf {
   font-family: "Tossface", sans-serif;
   font-style: normal;
