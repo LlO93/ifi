@@ -4,6 +4,8 @@ import { ChevronRight, Close, Search } from './components/icons'
 import './App.css'
 
 type RankingMetric = 'volume' | 'marketCap'
+type DetailTab = 'chart' | 'related'
+type ChartRange = '1개월' | '6개월' | '1년' | '전체'
 
 type Stock = {
   name: string
@@ -27,7 +29,11 @@ const stocks: Stock[] = [
 const RECENT_SEARCHES_KEY = 'invest-if.recent-searches.v1'
 
 function App() {
-  const [screen, setScreen] = useState<'explore' | 'search'>('explore')
+  const [screen, setScreen] = useState<'explore' | 'search' | 'detail'>('explore')
+  const [selectedStock, setSelectedStock] = useState<Stock>(stocks[0])
+  const [detailTab, setDetailTab] = useState<DetailTab>('chart')
+  const [chartRange, setChartRange] = useState<ChartRange>('6개월')
+  const [selectedDate, setSelectedDate] = useState('')
   const [metric, setMetric] = useState<RankingMetric>('volume')
   const [showAll, setShowAll] = useState(false)
   const [notice, setNotice] = useState('')
@@ -60,6 +66,12 @@ function App() {
 
   useEffect(() => {
     const onPopState = (event: PopStateEvent) => {
+      if (event.state?.screen === 'detail') {
+        const stock = stocks.find((item) => item.ticker === event.state.ticker)
+        if (stock) setSelectedStock(stock)
+        setScreen('detail')
+        return
+      }
       setScreen(event.state?.screen === 'search' ? 'search' : 'explore')
     }
     window.addEventListener('popstate', onPopState)
@@ -111,6 +123,14 @@ function App() {
     if (screen === 'search') window.history.back()
   }
 
+  const openDetail = (stock: Stock) => {
+    setNotice('')
+    setSelectedStock(stock)
+    setDetailTab('chart')
+    setScreen('detail')
+    window.history.pushState({ screen: 'detail', ticker: stock.ticker }, '')
+  }
+
   const chooseStock = (stock: Stock) => {
     const nextRecent = [stock.ticker, ...recentTickers.filter((ticker) => ticker !== stock.ticker)].slice(0, 5)
     setRecentTickers(nextRecent)
@@ -119,7 +139,69 @@ function App() {
     } catch {
       // 저장이 막혀도 검색과 선택은 계속 사용할 수 있다.
     }
-    setNotice(`${stock.name} 종목 상세 화면은 다음 이전 단계에서 연결할게요.`)
+    setNotice('')
+    openDetail(stock)
+  }
+
+  if (screen === 'detail') {
+    const relatedStocks = stocks.filter((stock) => stock.ticker !== selectedStock.ticker).slice(0, 3)
+    const chartPoints = '0,128 42,112 84,120 126,78 168,91 210,54 252,66 294,30 336,42'
+    return (
+      <main className="detail-screen canvas" style={{ '--safe-area-bottom': `${safeAreaBottom}px` } as React.CSSProperties}>
+        <section className="detail-content" aria-labelledby="detail-title">
+          <header className="stock-summary">
+            <div className="stock-mark detail-mark">{selectedStock.ticker.slice(0, 1)}</div>
+            <div>
+              <p className="eyebrow">{selectedStock.ticker} · NASDAQ · 예시 데이터</p>
+              <h1 id="detail-title">{selectedStock.name}</h1>
+            </div>
+            <strong className="detail-price">{selectedStock.price}</strong>
+            <p className="detail-change">전일 대비 {selectedStock.change} · 2026.09.21 종가</p>
+          </header>
+
+          <div className="detail-tabs" role="tablist" aria-label="종목 상세 보기">
+            <button type="button" role="tab" aria-selected={detailTab === 'chart'} onClick={() => setDetailTab('chart')}>차트</button>
+            <button type="button" role="tab" aria-selected={detailTab === 'related'} onClick={() => setDetailTab('related')}>관련 종목</button>
+          </div>
+
+          {detailTab === 'chart' ? (
+            <>
+              <section className="chart-card" aria-label={`${selectedStock.name} 예시 가격 차트`}>
+                <div className="chart-readout"><span>{selectedDate || '최근 종가'}</span><strong>{selectedStock.price}</strong></div>
+                <svg viewBox="0 0 336 160" role="img" aria-label="상승과 하락을 반복하는 예시 가격 추이">
+                  <defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="currentColor" stopOpacity="0.22"/><stop offset="1" stopColor="currentColor" stopOpacity="0"/></linearGradient></defs>
+                  <path d={`M${chartPoints} L336 160 L0 160 Z`} fill="url(#chart-fill)" stroke="none" />
+                  <polyline points={chartPoints} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="294" cy="30" r="5" fill="var(--color-bg)" stroke="currentColor" strokeWidth="3" />
+                </svg>
+              </section>
+
+              <div className="range-controls" aria-label="차트 기간">
+                {(['1개월', '6개월', '1년', '전체'] as ChartRange[]).map((range) => <button key={range} type="button" aria-pressed={chartRange === range} onClick={() => setChartRange(range)}>{range}</button>)}
+              </div>
+
+              <button className="selected-date" type="button" onClick={() => setSelectedDate(selectedDate === '2025.04.07' ? '2025.08.18' : '2025.04.07')}>
+                <span><small>{selectedDate ? '선택한 날짜' : '가상 매수일'}</small><strong>{selectedDate ? `${selectedDate} · ${selectedStock.price}` : '아직 선택하지 않았어요'}</strong></span>
+                <span>{selectedDate ? '날짜 변경' : '날짜 선택'}</span>
+              </button>
+
+              <section className="related-preview">
+                <div className="section-heading"><h2>관련 종목</h2><p>같은 업종에서 함께 살펴보는 종목이에요.</p></div>
+                <ul className="compact-stock-list">{relatedStocks.map((stock) => <li key={stock.ticker}><button type="button" onClick={() => openDetail(stock)}><span><strong>{stock.name}</strong><small>{stock.ticker}</small></span><span>{stock.price}</span><ChevronRight size={20}/></button></li>)}</ul>
+                <button className="text-action" type="button" onClick={() => setDetailTab('related')}>관련 종목 더 보기</button>
+              </section>
+            </>
+          ) : (
+            <section className="related-full">
+              <div className="section-heading"><h2>같은 업종의 종목</h2><p>현재 종목과 비교할 수 있는 예시 목록이에요.</p></div>
+              <ul className="compact-stock-list">{stocks.filter((stock) => stock.ticker !== selectedStock.ticker).map((stock) => <li key={stock.ticker}><button type="button" onClick={() => openDetail(stock)}><span><strong>{stock.name}</strong><small>{stock.ticker} · 같은 미국 대형 기술주</small></span><span>{stock.price}<small>{stock.change}</small></span><ChevronRight size={20}/></button></li>)}</ul>
+            </section>
+          )}
+        </section>
+
+        <div className="detail-cta"><button type="button" onClick={() => setNotice(selectedDate ? `${selectedStock.ticker} 가상 매수 입력은 다음 단계에서 연결할게요.` : '가상 매수일은 다음 화면에서 선택할 수 있어요.')}>{selectedStock.ticker} 이날 샀다면?</button>{notice && <p role="status">{notice}</p>}</div>
+      </main>
+    )
   }
 
   if (screen === 'search') {
@@ -225,7 +307,7 @@ function App() {
               const isPositive = stock.change.startsWith('+')
               return (
                 <li key={stock.ticker}>
-                  <button className="stock-row" type="button" onClick={() => announceNextScreen(`${stock.name} 종목 상세`)} aria-label={`${index + 1}위 ${stock.name}, ${stock.price}, ${stock.change}`}>
+                  <button className="stock-row" type="button" onClick={() => openDetail(stock)} aria-label={`${index + 1}위 ${stock.name}, ${stock.price}, ${stock.change}`}>
                     <span className="rank-number">{index + 1}</span>
                     <span className="stock-identity" aria-hidden="true">
                       <span className="stock-mark">{stock.ticker.slice(0, 1)}</span>
